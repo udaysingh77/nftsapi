@@ -4,8 +4,8 @@ const nftController = require("../Controllers/nftController")
 const router = express.Router()
 
 
-router.route("/").get(nftController.getAllNfts).post(nftController.createNfts);
+router.route("/").get(nftController.getAllNfts).post(nftController.createNft);
 
-router.route(":/").get(nftController.getNft);
+router.route("/:id").get(nftController.getNft);
 
 module.exports = router;

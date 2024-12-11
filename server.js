@@ -9,12 +9,9 @@ const handle = nextServer.getRequestHandler();
 dotenv.config({path:"./config.env"});
 const app = require("./app");
 
-const DB = process.env.DATABASE.replace(
-    "<PASSWORD>",
-    process.env.DATABASE_PASSWORD
-);
 
-mongoose.connect(DB,{
+
+mongoose.connect(process.env.DATABASE,{
     useNewUrlParser:true,
     useCreateIndex:true,
     useFindAndModify:false,
@@ -22,7 +19,7 @@ mongoose.connect(DB,{
 }).then(()=>console.log("DB connecton successful"));
 
 
-const port = 3000;
+const port = 5000;
 
 let server;
 nextServer.prepare().then(()=>{
