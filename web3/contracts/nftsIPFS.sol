@@ -1,12 +1,13 @@
+
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-contract nftsIPFS {
+contract NFTsIPFS {
 
-    address payable contractOwner = payable(0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97);
+    address payable public contractOwner = payable(0x39eb3aAd2a0551cAA773ef2dC03fafBFbdFE6608);
     uint public listingPrice = 0.025 ether;
 
-    struct NFTs{
+    struct NFT {
         string title;
         string description;
         string email;
@@ -18,14 +19,28 @@ contract nftsIPFS {
         uint256 id;
     }
 
-    mapping(uint256 => NFTs) public nftImages;
+    mapping(uint256 => NFT) public nftImages;
     uint256 public imagesCount = 0;
 
-    function uploadIPFS(address _creator, string memory _image, string memory _title,string memory _description, string memory _email, string memory _category) public payable returns (string memory,string memory,string memory,address,string memory){
+    function uploadIPFS(
+        address _creator,
+        string memory _image,
+        string memory _title,
+        string memory _description,
+        string memory _email,
+        string memory _category
+    ) public payable returns (
+        string memory,
+        string memory,
+        string memory,
+        address,
+        string memory
+    ) {
+        require(msg.value >= listingPrice, "Insufficient listing price");
+
         imagesCount++;
 
-        NFTs storage nft = nftImages[imagesCount];
-
+        NFT storage nft = nftImages[imagesCount];
         nft.title = _title;
         nft.creator = _creator;
         nft.description = _description;
@@ -35,7 +50,7 @@ contract nftsIPFS {
         nft.timestamp = block.timestamp;
         nft.id = imagesCount;
 
-        return(
+        return (
             _title,
             _description,
             _category,
@@ -44,64 +59,67 @@ contract nftsIPFS {
         );
     }
 
-    function getAllNFTs() public view returns (NFTs[] memory){
+    function getAllNFTs() public view returns (NFT[] memory) {
         uint256 itemCount = imagesCount;
-        uint256 currentIndex = 0;
+        NFT[] memory items = new NFT[](itemCount);
 
-        NFTs[] memory items = new NFTs[](itemCount);
-        for(uint256 i =0; i<itemsCount; i++){
-            uint256 currentId = i + 1;
-            NFTs storage currentItems = nftImages[currentId];
-            items[currentIndex] = currentItem;
-            currentIndex += 1;
+        for (uint256 i = 0; i < itemCount; i++) {
+            uint256 currentId = i + 1; // Mapping keys are 1-based
+            NFT storage currentItem = nftImages[currentId];
+            items[i] = currentItem;
         }
+
         return items;
     }
 
-    function getImages(uint256 id) external view returns(
-        string memory,
-        string memory,
-        string memory,
-        string memory,
-        uint256,
-        address,
-        string memory,
-        uint256
-    ){
-        NFTs memory nfts = nftImages[id];
+    function getImage(uint256 id) 
+        external 
+        view 
+        returns (
+            string memory,
+            string memory,
+            string memory,
+            string memory,
+            uint256,
+            address,
+            string memory,
+            uint256
+        ) {
+        NFT memory nft = nftImages[id];
         return (
-            nfts.title,
-            nfts.description,
-            nfts.email,
-            nfts.category,
-            nfts.fundraised,
-            nfts.creator,
-            nfts.image,
-            nfts.timestamp,
-            nfts.id
-            )
+            nft.title,
+            nft.description,
+            nft.email,
+            nft.category,
+            nft.fundraised,
+            nft.creator,
+            nft.image,
+            nft.timestamp
+        );
     }
 
-    function updateListingPrice(uint256 _listingPrice,address owner) public payable{
-        require(contractOwner == owner,"only contract owner can update listing price");
+    function updateListingPrice(uint _listingPrice) external {
+        require(msg.sender == contractOwner, "Only contract owner can update listing price");
         listingPrice = _listingPrice;
     }
 
-    function donateToImage(uin256 _id) public payable {
-        uint256 amount = msg.value ;
-        NFTs storage nfs = nftImages[_id];
-        (bool,sent,) = payable(nft.creator).call{value:amount}("");
-        if(sent){
-            nft.fundraised = nft.fundraised + amount;
-        }
+    function donateToImage(uint256 _id) public payable {
+        uint256 amount = msg.value;
+        NFT storage nft = nftImages[_id];
+        require(amount > 0, "Donation amount must be greater than zero");
+
+        (bool sent, ) = payable(nft.creator).call{value: amount}("");
+        require(sent, "Failed to send Ether");
+
+        nft.fundraised += amount;
     }
 
-    function withdraw(address _owner) external {
-        require(_owner == contractOwner,"Only Ower can widthdraw");
+    function withdraw() external {
+        require(msg.sender == contractOwner, "Only owner can withdraw");
         uint256 balance = address(this).balance;
-        require(balance>0,"No funds available");
-        contractOwner.transfer(balance)
+        require(balance > 0, "No funds available");
+
+        (bool sent, ) = contractOwner.call{value: balance}("");
+        require(sent, "Failed to withdraw funds");
     }
-
-
 }
